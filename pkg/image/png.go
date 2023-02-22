@@ -1,25 +1,25 @@
-package png
+package image
 
 import (
 	"encoding/binary"
 	"io"
 )
 
-type Chunk struct {
+type PngChunk struct {
 	Length int
 	Name   string
 	Data   []byte
 	CRC    uint32
 }
 
-func DecodeChunks(r io.Reader) ([]Chunk, error) {
-	d := decoder{r: r, chunks: make([]Chunk, 0)}
+func DecodePngTextChunk(r io.Reader) ([]PngChunk, error) {
+	d := decoder{r: r, chunks: make([]PngChunk, 0)}
 	return d.chunks, d.parse("tEXt")
 }
 
 type decoder struct {
 	r      io.Reader
-	chunks []Chunk
+	chunks []PngChunk
 }
 
 func (d *decoder) parse(targetChunk string) error {
@@ -62,7 +62,7 @@ func (d *decoder) parseChunk() error {
 		return err
 	}
 
-	d.chunks = append(d.chunks, Chunk{
+	d.chunks = append(d.chunks, PngChunk{
 		Length: int(chunkLen),
 		Name:   chunkName,
 		Data:   chunkData,

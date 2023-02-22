@@ -1,21 +1,48 @@
 package image
 
 import (
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 )
+
+type Image struct {
+	Name   string
+	Path   string
+	Format string
+}
 
 type Finder interface {
 	Find() ([]Image, error)
 }
 
 type PNGFinder struct {
-	Path string
+	Path      string
+	Recursive bool
 }
 
 func (finder *PNGFinder) Find() ([]Image, error) {
-	entries, err := os.ReadDir(finder.Path)
+	if finder.Recursive || true {
+		images := make([]Image, 0)
+		err := filepath.WalkDir(finder.Path, func(path string, d fs.DirEntry, err error) error {
+			if !d.IsDir() {
+				return nil
+			}
+
+			imgs, err := finder.findInDir(path)
+			images = append(images, imgs...)
+			return err
+		})
+		return images, err
+	}
+
+	return finder.findInDir(finder.Path)
+}
+
+func (finder *PNGFinder) findInDir(dirPath string) ([]Image, error) {
+	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +54,7 @@ func (finder *PNGFinder) Find() ([]Image, error) {
 			continue
 		}
 
-		entryPath := path.Join(finder.Path, entry.Name())
+		entryPath := path.Join(dirPath, entry.Name())
 		if finder.fileIsPNG(entryPath) {
 			images = append(images, Image{
 				Name:   entry.Name(),
@@ -38,6 +65,7 @@ func (finder *PNGFinder) Find() ([]Image, error) {
 	}
 
 	return images, nil
+
 }
 
 func (*PNGFinder) fileIsPNG(path string) bool {

@@ -1,8 +1,8 @@
-package sd
+package index
 
-import "github.com/exepirit/sd-gallery/internal/image"
+import "github.com/exepirit/sd-gallery/pkg/image"
 
-type Output struct {
+type PictureMeta struct {
 	Image          image.Image
 	Prompt         string
 	NegativePrompt string
@@ -11,10 +11,10 @@ type Output struct {
 	CfgScale       float64
 	Seed           string
 	Size           string
-	Model          Model
+	Model          StableDiffusionModel
 }
 
-type Model struct {
+type StableDiffusionModel struct {
 	Name string
 	Hash string
 }
