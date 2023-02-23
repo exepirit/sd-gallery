@@ -58,12 +58,14 @@ type PictureQuery struct {
 	limit int
 }
 
-func (q *PictureQuery) Skip(n int) {
+func (q *PictureQuery) Skip(n int) repository.Query[model.Picture] {
 	q.skip = n
+	return q
 }
 
-func (q *PictureQuery) Limit(n int) {
+func (q *PictureQuery) Limit(n int) repository.Query[model.Picture] {
 	q.limit = n
+	return q
 }
 
 func (q PictureQuery) GetAll() ([]model.Picture, error) {
