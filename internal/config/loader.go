@@ -1,19 +1,30 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"errors"
+	"log"
+	"strings"
+
+	"github.com/spf13/viper"
+)
 
 // Load try to load application configuration.
 func Load() (Config, error) {
 	cfg := Default()
 
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("~/.config/sd-gallery")
 	viper.SetConfigName("app")
-	viper.SetConfigType("yaml")
+	viper.SetConfigType("env")
 	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
 
 	if err := viper.ReadInConfig(); err != nil {
-		return cfg, err
+		switch {
+		case errors.As(err, &viper.ConfigFileNotFoundError{}):
+			log.Println("[WARN] Configuration file not found")
+		default:
+			return cfg, err
+		}
 	}
 
 	err := viper.Unmarshal(&cfg)

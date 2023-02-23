@@ -24,7 +24,7 @@ type IndexerConfig struct {
 func Default() Config {
 	return Config{
 		ListenAddress:   "[::]:8080",
-		DatabaseAddress: "leveldb://./data",
+		DatabaseAddress: "leveldb:./data",
 		Index: IndexerConfig{
 			Paths: []string{},
 		},
