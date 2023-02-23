@@ -12,6 +12,11 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
+// NewPictureRepository create new PictureRepository instance.
+func NewPictureRepository(db *leveldb.DB) *PictureRepository {
+	return &PictureRepository{db: db}
+}
+
 // PictureRepository implements repository.PictureRepository uses LevelDB.
 type PictureRepository struct {
 	db *leveldb.DB
