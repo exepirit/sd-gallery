@@ -18,6 +18,7 @@ func NewServer(cfg ServerConfig) Server {
 
 	ginHandler := gin.New()
 	ginHandler.Use(
+		gin.Logger(),
 		gin.Recovery(),
 	)
 
