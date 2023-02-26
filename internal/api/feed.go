@@ -24,8 +24,11 @@ func (e FeedEndpoints) Bind(routes gin.IRoutes) {
 }
 
 type ImageDto struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	PictureID string `json:"pictureId"`
+	Name      string `json:"name"`
+	URL       string `json:"url"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
 }
 
 type ImagesPageDto struct {
@@ -58,8 +61,11 @@ func (e FeedEndpoints) GetFeedPage(ctx *gin.Context) {
 	}
 	for _, picture := range result.Pictures {
 		response.Items = append(response.Items, ImageDto{
+			PictureID: picture.ID.String(),
 			Name: picture.Name,
 			URL:  "/api/images/" + picture.ID.String(),
+			Width: picture.Size.Width,
+			Height: picture.Size.Height,
 		})
 	}
 	ctx.JSON(http.StatusOK, response)
