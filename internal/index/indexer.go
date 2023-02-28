@@ -2,32 +2,43 @@ package index
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/exepirit/sd-gallery/internal/model"
 	"github.com/exepirit/sd-gallery/internal/repository"
 	"github.com/exepirit/sd-gallery/pkg/image"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
+type NewIndexerArgs struct {
+	fx.In
+
+	Pictures repository.Picture
+	Logger   *zap.Logger `optional:"true"`
+}
+
 // NewIndexer makes new Indexer instance.
-func NewIndexer(picturesRepo repository.Picture) Indexer {
+func NewIndexer(dependencies NewIndexerArgs) Indexer {
+	if dependencies.Logger == nil {
+		dependencies.Logger, _ = zap.NewDevelopment()
+	}
+
 	return Indexer{
-		IgnoreErrors: true,
-		picturesRepo: picturesRepo,
+		logger: dependencies.Logger,
+		picturesRepo: dependencies.Pictures,
 	}
 }
 
 // Indexer store new pictures data in repository.
 type Indexer struct {
-	IgnoreErrors bool
-
+	logger *zap.Logger
 	picturesRepo repository.Picture
 	indexCache   map[string]struct{}
 }
 
-// AddToIndex scrape additional data and add picture in repository.
-func (indexer *Indexer) AddToIndex(ctx context.Context, image image.Image) error {
+// addToIndex scrape additional data and add picture in repository.
+func (indexer *Indexer) addToIndex(ctx context.Context, image image.Image) error {
 	if indexer.indexCache == nil {
 		indexer.fillIndexCache(ctx)
 	}
@@ -38,12 +49,12 @@ func (indexer *Indexer) AddToIndex(ctx context.Context, image image.Image) error
 	}
 
 	if _, inCache := indexer.indexCache[fileHash]; inCache {
-		return errors.New("already indexed")
+		return ErrAlreadyIndexed
 	}
 
 	pictureMeta, err := RecognizeSdOutput(image)
 	if err != nil {
-		return fmt.Errorf("cannot interpret image as Stable Diffusion output: %w", err)
+		return ErrNotGeneratedBySD
 	}
 
 	picture := newPicture(pictureMeta, fileHash)
@@ -51,6 +62,10 @@ func (indexer *Indexer) AddToIndex(ctx context.Context, image image.Image) error
 	if err = indexer.picturesRepo.Put(ctx, picture); err != nil {
 		return fmt.Errorf("cannot store picture data: %w", err)
 	}
+
+	indexer.logger.Info("Picture indexed",
+		zap.String("filename", image.Name),
+		zap.String("uuid", picture.ID.String()))
 	return nil
 }
 
@@ -60,14 +75,20 @@ func (indexer Indexer) IndexFound(ctx context.Context, finder image.Finder) (int
 	if err != nil {
 		return 0, err
 	}
+	indexer.logger.Debug("Images scan completed", zap.Int("found", len(found)))
 
 	counter := 0
 	for _, image := range found {
-		if err := indexer.AddToIndex(ctx, image); err != nil {
-			if indexer.IgnoreErrors {
-				continue
+		if err := indexer.addToIndex(ctx, image); err != nil {
+			switch err {
+			case ErrAlreadyIndexed:
+				indexer.logger.Debug("File already in index", zap.String("filename", image.Name))
+			case ErrNotGeneratedBySD:
+				indexer.logger.Warn("Image not recognized as Stable Diffusion output",
+					zap.String("filepath", image.Path))
+			default:
+				return counter, err
 			}
-			return counter, err
 		}
 		counter++
 	}

@@ -10,11 +10,13 @@ import (
 	"github.com/exepirit/sd-gallery/internal/config"
 	"github.com/exepirit/sd-gallery/internal/index"
 	"github.com/exepirit/sd-gallery/pkg/image"
+	"go.uber.org/zap"
 )
 
 func main() {
 	databaseURL := flag.String("database", "leveldb:./data", "Database connection string")
 	inputDir := flag.String("input", "", "Input directory")
+	debugFlag := flag.Bool("debug", false, "Enable debug output")
 	flag.Parse()
 
 	if inputDir == nil || *inputDir == "" {
@@ -22,24 +24,37 @@ func main() {
 		os.Exit(1)
 	}
 
+	var logger *zap.Logger
+	var err error
+	if *debugFlag {
+		logger, err = zap.NewDevelopment()
+	} else {
+		logger, err = zap.NewProduction(zap.IncreaseLevel(zap.InfoLevel))
+	}
+	if err != nil {
+		fmt.Println("Cannot setup logging:", err)
+	}
+
 	cfg := config.Config{
 		DatabaseAddress: *databaseURL,
 	}
 	repositories, err := bootstrap.MakeRepositories(cfg)
 	if err != nil {
-		fmt.Println("Cannot init storage:", err)
+		logger.Error("Cannot build repositories", zap.Error(err))
 		os.Exit(127)
 	}
 
 	imageFinder := image.PNGFinder{
 		Path: *inputDir,
 	}
-	indexer := index.NewIndexer(repositories.Picture)
+	indexer := index.NewIndexer(index.NewIndexerArgs{
+		Pictures: repositories.Picture,
+		Logger: logger,
+	})
 
-	indexedCount, err := indexer.IndexFound(context.Background(), &imageFinder)
+	_, err = indexer.IndexFound(context.Background(), &imageFinder)
 	if err != nil {
-		fmt.Println("Indexing error:", err)
+		logger.Error("Index error", zap.Error(err))
 		os.Exit(1)
 	}
-	fmt.Printf("%d images indexed\n", indexedCount)
 }
