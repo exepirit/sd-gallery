@@ -1,0 +1,19 @@
+p {
+  display: flex;
+  flex-direction: row;
+}
+
+p:before, p:after{
+  content: "";
+  flex: 1 1;
+  border-bottom: 1px solid;
+  margin: auto;
+}
+
+p:before {
+  margin-right: 10px
+}
+
+p:after {
+  margin-left: 10px
+}
