@@ -1,11 +1,11 @@
-import { Container } from "@mui/material";
+import { Container } from "@nextui-org/react";
 import { ImagesListContainer } from "./Components";
 
 
 
 export const Gallery = () => {
   return (
-    <Container>
+    <Container md>
       <ImagesListContainer />
     </Container>
   );

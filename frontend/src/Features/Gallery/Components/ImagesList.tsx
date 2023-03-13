@@ -1,4 +1,4 @@
-import { Card, Grid, ImageList, ImageListItem, Typography } from "@mui/material"
+import { Grid } from "@nextui-org/react";
 import { Image } from "../../../Models";
 import './ImagesList.css';
 
@@ -7,15 +7,9 @@ export interface ImagesListProps {
 }
 
 export const ImagesList = (props: ImagesListProps) => {
-    const renderImage = (image: Image) => (
-        <ImageListItem key={image.name}>
-            <img className='images_list__img' src={image.url} loading='lazy'/>
-        </ImageListItem>
-    );
-
     return (
-        <Grid container spacing={0} rowSpacing={0}>
-            {props.images.map((image) => <Grid item md={3} sm={4} key={image.pictureId}>
+        <Grid.Container gap={0}>
+            {props.images.map((image) => <Grid md={3} sm={4} key={image.pictureId}>
                 <img className='images_list__img'
                     src={image.url}
                     loading='lazy'
@@ -23,12 +17,6 @@ export const ImagesList = (props: ImagesListProps) => {
                     height={image.height}
                 />
             </Grid>)}
-        </Grid>
+        </Grid.Container>
     );
-
-    return (
-        <ImageList cols={3} variant='quilted'>
-            {props.images.map((image) => renderImage(image))}
-        </ImageList>
-    );  
 }
