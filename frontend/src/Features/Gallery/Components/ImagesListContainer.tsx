@@ -1,3 +1,4 @@
+import { Container, Loading } from "@nextui-org/react";
 import { useEffect, useState } from "react";
 import { getImageFeed } from "../../../Api/Feed";
 import { Image } from '../../../Models';
@@ -7,20 +8,25 @@ import { ImagesList } from "./ImagesList"
 const pageSize = 24;
 
 export const ImagesListContainer = () => {
-  const [images, setImages] = useState<Image[]>([]);
+  const [imagesPages, setImagesPages] = useState<Image[][]>([]);
   const [isLoading, setIsLoading] = useInfiniteScroll(loadMoreImages);
 
   function loadMoreImages() {
-    let pageIndex = Math.floor(images.length / pageSize);
+    let pageIndex = imagesPages.length;
 
     getImageFeed(pageIndex, pageSize)
       .then(imagesList => {
-        setImages(pervState => ([...pervState, ...imagesList.items]));
+        setImagesPages(pervState => ([...pervState, imagesList.items]));
 
         if (imagesList.items.length === pageSize)
           setIsLoading(false);
       });
   };
 
-  return <ImagesList images={images} />;
+  return <>
+    {imagesPages.map((page, pageIdx) => <ImagesList images={page} key={pageIdx} />)}
+    <Container css={{dflex: 'center', p: 48}}>
+      <Loading />
+    </Container>
+  </>;
 }
