@@ -24,26 +24,28 @@ func (e PictureEndpoints) Bind(r gin.IRoutes) {
 }
 
 type PictureDto struct {
-	ID uuid.UUID `json:"id"`
-	Size PictureSizeDto `json:"size"`
-	Tags []string `json:"tags"`
+	ID   uuid.UUID              `json:"id"`
+	Name string                 `json:"name"`
+	Size PictureSizeDto         `json:"size"`
+	Tags []string               `json:"tags"`
 	Info PictureGenerateInfoDto `json:"info"`
 }
 
 type PictureSizeDto struct {
-	Width int `json:"width"`
+	Width  int `json:"width"`
 	Height int `json:"height"`
 }
 
 type PictureGenerateInfoDto struct {
-	Prompt string `json:"prompt"`
-	NegativePrompt string `json:"negativePrompt"`
-	Steps int `json:"steps"`
-	Size string `json:"size"`
-	Seed string `json:"seed"`
-	Sampler string `json:"sampler"`
-	CfgScale float32 `json:"cfgScale"`
-	ModelHash string `json:"modelHash"`
+	Prompt         string  `json:"prompt"`
+	NegativePrompt string  `json:"negativePrompt"`
+	Steps          int     `json:"steps"`
+	Size           string  `json:"size"`
+	Seed           string  `json:"seed"`
+	Sampler        string  `json:"sampler"`
+	CfgScale       float32 `json:"cfgScale"`
+	ModelName      string  `json:"modelName"`
+	ModelHash      string  `json:"modelHash"`
 }
 
 func (e PictureEndpoints) GetByID(ctx *gin.Context) {
@@ -62,6 +64,7 @@ func (e PictureEndpoints) GetByID(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, PictureDto{
 		ID:   picture.ID,
+		Name: picture.Name,
 		Size: PictureSizeDto{
 			Width:  picture.Size.Width,
 			Height: picture.Size.Height,
@@ -75,6 +78,7 @@ func (e PictureEndpoints) GetByID(ctx *gin.Context) {
 			Seed:           picture.GenerateInfo.Seed,
 			Sampler:        picture.GenerateInfo.Sampler,
 			CfgScale:       float32(picture.GenerateInfo.CfgScale),
+			ModelName:      picture.GenerateInfo.Model.Name,
 			ModelHash:      picture.GenerateInfo.Model.Hash,
 		},
 	})
