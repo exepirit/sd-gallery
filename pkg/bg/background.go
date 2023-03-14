@@ -9,21 +9,30 @@ import (
 
 // BackgroundWorker manage plan of background tasks and run tasks by schedule.
 type BackgroundWorker struct {
+	TaskRunner *TaskRunner
+
 	schedule    map[TaskID]time.Duration
 	lastPlanned map[TaskID]time.Time
 
 	interruptChan chan struct{}
-	runner        *TaskRunner
 }
 
 // Schedule put task into execute schedule.
 func (worker *BackgroundWorker) Schedule(taskID TaskID, task Task, period time.Duration) error {
-	err := worker.runner.Register(taskID, task)
+	err := worker.TaskRunner.Register(taskID, task)
 	if err != nil {
 		return err
 	}
 
 	// TODO: thread-safe zone
+
+	if worker.schedule == nil {
+		worker.schedule = make(map[TaskID]time.Duration, 1)
+	}
+	if worker.lastPlanned == nil {
+		worker.schedule = make(map[TaskID]time.Duration, 1)
+	}
+
 	worker.schedule[taskID] = period
 	worker.lastPlanned[taskID] = time.Unix(0, 0)
 
@@ -46,7 +55,7 @@ func (worker *BackgroundWorker) Run() {
 		// wait for scheduled task or interrupt
 		select {
 		case <-timer.C:
-			err := worker.runner.Run(nextTaskId, ctx)
+			err := worker.TaskRunner.Run(nextTaskId, ctx)
 			if err != nil {
 				panic(err) // TODO: log errors
 			}

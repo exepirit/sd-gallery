@@ -19,7 +19,6 @@ func InitAppLifecycle(
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			srv.Bind(api)
-
 			go func(server server.Server) {
 				log.Printf("Handle new connections on %s", server.Addr)
 				switch err := server.ListenAndServe(); err {
@@ -35,7 +34,9 @@ func InitAppLifecycle(
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return srv.Shutdown(ctx)
+			_ = srv.Shutdown(ctx)
+
+			return nil
 		},
 	})
 }

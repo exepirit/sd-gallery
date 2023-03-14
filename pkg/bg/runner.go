@@ -12,6 +12,10 @@ type TaskRunner struct {
 
 // Register puts task into registry.
 func (runner *TaskRunner) Register(taskId TaskID, task Task) error {
+	if runner.tasks == nil {
+		runner.tasks = make(map[TaskID]Task, 1)
+	}
+
 	_, exists := runner.tasks[taskId]
 	if exists {
 		return errors.New("already registered")

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/exepirit/sd-gallery/internal/bootstrap"
 	"github.com/exepirit/sd-gallery/internal/config"
 	"github.com/exepirit/sd-gallery/internal/index"
+	"github.com/exepirit/sd-gallery/internal/infrastructure"
 	"github.com/exepirit/sd-gallery/pkg/image"
 	"go.uber.org/zap"
 )
@@ -38,7 +38,7 @@ func main() {
 	cfg := config.Config{
 		DatabaseAddress: *databaseURL,
 	}
-	repositories, err := bootstrap.MakeRepositories(cfg)
+	repositories, err := infrastructure.MakeRepositories(cfg)
 	if err != nil {
 		logger.Error("Cannot build repositories", zap.Error(err))
 		os.Exit(127)
@@ -49,7 +49,7 @@ func main() {
 	}
 	indexer := index.NewIndexer(index.NewIndexerArgs{
 		Pictures: repositories.Picture,
-		Logger: logger,
+		Logger:   logger,
 	})
 
 	_, err = indexer.IndexFound(context.Background(), &imageFinder)

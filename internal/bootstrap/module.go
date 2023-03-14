@@ -4,6 +4,8 @@ import (
 	"github.com/exepirit/sd-gallery/internal/api"
 	"github.com/exepirit/sd-gallery/internal/config"
 	"github.com/exepirit/sd-gallery/internal/handlers"
+	"github.com/exepirit/sd-gallery/internal/infrastructure"
+	"github.com/exepirit/sd-gallery/internal/task"
 	"github.com/exepirit/sd-gallery/pkg/server"
 	"go.uber.org/fx"
 )
@@ -18,8 +20,9 @@ var Module = fx.Options(
 			ListenAddress: cfg.ListenAddress,
 		})
 	}),
-	fx.Provide(MakeRepositories),
+	infrastructure.Module,
 	handlers.Module,
 	api.Module,
+	task.Module,
 	fx.Invoke(InitAppLifecycle),
 )
