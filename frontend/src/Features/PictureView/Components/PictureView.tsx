@@ -46,12 +46,11 @@ export const PictureView = (props: PictureViewProps) => {
       </Grid>
       <Grid md={3} direction='column' css={{
         h: '100vh',
-        p: 10,
-        pt: 24
+        p: 36,
       }}>
-        <RouterLink to='/'>
-          Close
-        </RouterLink>
+        <div>
+          {props.picture.tags.map((tag, idx) => <Badge key={idx}>{tag}</Badge>)}
+        </div>
         {renderGenerationInfo()}
         <Card variant='flat'>
           <Card.Body css={{
