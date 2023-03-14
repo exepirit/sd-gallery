@@ -37,7 +37,8 @@ export const PictureView = (props: PictureViewProps) => {
     <Grid.Container>
       <Grid md={9} css={{
         dflex: 'center',
-        ai: 'center'
+        ai: 'center',
+        width: '100%',
       }}>
         <Image src={`/api/images/${props.picture.id}`}
           width={props.picture.size.width}
@@ -59,7 +60,7 @@ export const PictureView = (props: PictureViewProps) => {
             justifyContent: 'space-between'
           }}>
             <div>
-              <Text>Stable Diffusion model</Text>
+              <Text>{props.picture.info.modelName}</Text>
               <Text color={theme?.colors.accents7.value}>{props.picture.info.modelHash}</Text>
             </div>
             <div>
