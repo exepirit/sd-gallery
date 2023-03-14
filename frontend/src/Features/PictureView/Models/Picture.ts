@@ -11,11 +11,13 @@ export type PictureGenerateInfo = {
     seed: string,
     sampler: string,
     cfgScale: number,
+    modelName: string,
     modelHash: string
 };
 
 export type Picture = {
     id: string,
+    name: string,
     size: PictureSize,
     tags: string[],
     info: PictureGenerateInfo
