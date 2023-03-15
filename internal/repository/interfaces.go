@@ -17,6 +17,7 @@ type Picture interface {
 type Query[T any] interface {
 	Skip(n int) Query[T]
 	Limit(n int) Query[T]
+	SortBy(key string) Query[T]
 	GetAll() ([]T, error)
 	Iterate(callee func(m T) bool) error
 }

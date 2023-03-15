@@ -23,6 +23,7 @@ type GetPictureFeedQuery struct {
 
 func (q *GetPictureFeedQuery) Handle(ctx context.Context, args GetPictureFeedArgs) (GetPictureFeedResult, error) {
 	pictures, err := q.picturesRepo.Query(ctx).
+		SortBy("ScrapeTime").
 		Skip(args.PageSize * args.PageIndex).
 		Limit(args.PageSize).
 		GetAll()

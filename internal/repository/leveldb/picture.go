@@ -8,9 +8,9 @@ import (
 	"github.com/exepirit/sd-gallery/internal/repository"
 	"github.com/google/uuid"
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
-	"github.com/syndtr/goleveldb/leveldb/util"
 )
+
+const pictureEntityName = "picture"
 
 // NewPictureRepository create new PictureRepository instance.
 func NewPictureRepository(db *leveldb.DB) *PictureRepository {
@@ -23,7 +23,7 @@ type PictureRepository struct {
 }
 
 func (repo PictureRepository) GetOne(ctx context.Context, pictureId uuid.UUID) (model.Picture, error) {
-	data, err := repo.db.Get([]byte("picture:"+pictureId.String()), nil)
+	data, err := repo.db.Get(fmtEntityKey(pictureEntityName, pictureId), nil)
 	if err != nil {
 		return model.Picture{}, err
 	}
@@ -34,8 +34,7 @@ func (repo PictureRepository) GetOne(ctx context.Context, pictureId uuid.UUID) (
 }
 
 func (repo PictureRepository) Query(ctx context.Context) repository.Query[model.Picture] {
-	iter := repo.db.NewIterator(util.BytesPrefix([]byte("picture:")), nil)
-	return &PictureQuery{iter: iter, limit: -1}
+	return newPictureQuery(repo.db)
 }
 
 func (repo PictureRepository) Put(ctx context.Context, picture model.Picture) error {
@@ -44,76 +43,31 @@ func (repo PictureRepository) Put(ctx context.Context, picture model.Picture) er
 		return err
 	}
 
-	return repo.db.Put([]byte("picture:"+picture.ID.String()), data, nil)
+	err = repo.db.Put(fmtEntityKey(pictureEntityName, picture.ID), data, nil)
+	if err != nil {
+		return err
+	}
+
+	index, err := getIndex(repo.db, "Picture", "ScrapeTime")
+	if err != nil {
+		return err
+	}
+	index.insert(
+		fmtEntityKey(pictureEntityName, picture.ID),
+		int(picture.ScrapeInfo.Time.UnixMilli()),
+	)
+	return putIndex(repo.db, "Picture", "ScrapeTime", index)
 }
 
 func (repo PictureRepository) Delete(ctx context.Context, pictureId uuid.UUID) error {
-	return repo.db.Delete([]byte("picture:"+pictureId.String()), nil)
-}
-
-// PictureQuery implements repository.Query[model.Picture] with LevelDB.
-type PictureQuery struct {
-	iter  iterator.Iterator
-	skip  int
-	limit int
-}
-
-func (q *PictureQuery) Skip(n int) repository.Query[model.Picture] {
-	q.skip = n
-	return q
-}
-
-func (q *PictureQuery) Limit(n int) repository.Query[model.Picture] {
-	q.limit = n
-	return q
-}
-
-func (q PictureQuery) GetAll() ([]model.Picture, error) {
-	pictures := make([]model.Picture, 0)
-	var picture model.Picture
-	var skipped int
-
-	for i := 0; q.iter.Next(); i++ {
-		if q.limit >= 0 && len(pictures) == q.limit {
-			break
-		}
-
-		if skipped < q.skip {
-			skipped++
-			continue
-		}
-
-		if err := json.Unmarshal(q.iter.Value(), &picture); err != nil {
-			return pictures, err
-		}
-		pictures = append(pictures, picture)
+	index, err := getIndex(repo.db, "Picture", "ScrapeTime")
+	if err != nil {
+		return err
 	}
-	q.iter.Release()
-	return pictures, q.iter.Error()
-}
-
-func (q PictureQuery) Iterate(callee func(p model.Picture) bool) error {
-	var picture model.Picture
-	var skipped, returned int
-
-	for q.iter.Next() {
-		if q.limit >= 0 && returned == q.limit {
-			break
-		}
-
-		if skipped < q.skip {
-			skipped++
-			continue
-		}
-
-		if err := json.Unmarshal(q.iter.Value(), &picture); err != nil {
-			return err
-		}
-
-		if !callee(picture) {
-			break
-		}
+	index.delete(fmtEntityKey(pictureEntityName, pictureId))
+	if err = putIndex(repo.db, "Picture", "ScrapeTime", index); err != nil {
+		return err
 	}
-	q.iter.Release()
-	return q.iter.Error()
+
+	return repo.db.Delete(fmtEntityKey(pictureEntityName, pictureId), nil)
 }
